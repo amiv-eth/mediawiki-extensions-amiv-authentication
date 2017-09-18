@@ -1,0 +1,34 @@
+{
+	"name": "AMIVAuthentication",
+	"version": "0.1.0",
+	"author": [
+		"Sandro Lutz"
+	],
+	"url": "https://github.com/amiv-eth/mediawiki-extensions-AMIVAuthentication",
+	"descriptionmsg": "amivauthentication-desc",
+	"license-name": "AGPLv3",
+	"type": "other",
+	"requires": {
+		"MediaWiki": ">= 1.27.0"
+	},
+	"MessagesDirs": {
+		"AMIVAuthentication": [
+			"i18n"
+		]
+	},
+	"AutoloadClasses": {
+		"APIUtil": "APIUtil.php",
+		"AMIVAuthenticationProvider": "AMIVAuthentication.provider.php"
+	},
+	"AuthManagerAutoConfig": {
+        "primaryauth": {
+            "AMIVAuthenticationProvider": {
+                "class": "AMIVAuthenticationProvider"
+            }
+        }
+    },
+	"config": {
+		"AMIVAuthenticationApiUrl": ""
+	},
+	"manifest_version": 1
+}

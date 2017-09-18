@@ -1,0 +1,8 @@
+{
+	"@metadata": {
+		"authors": [
+			"Sandro Lutz"
+		]
+	},
+	"amivauthentication-desc": "Stellt einen Authentication-Provider zur Verfügung, um sich mit der AMIV API einzuloggen."
+}
