@@ -49,12 +49,12 @@ class APIUtil {
      * @param string $token
      */
     private static function rawreq($request, $postData=null, $token=null) {
-		global $wgAMIVAuthenticationApiUrl;
-		
-		if (strlen($wgAMIVAuthenticationApiUrl) == 0) {
-			return [404, "API server not defined"];
-		}
-		
+        global $wgAMIVAuthenticationApiUrl;
+
+        if (strlen($wgAMIVAuthenticationApiUrl) == 0) {
+            return [404, "API server not defined"];
+        }
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $wgAMIVAuthenticationApiUrl.'/'.$request);
         

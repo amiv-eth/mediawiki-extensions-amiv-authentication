@@ -27,99 +27,99 @@ use MediaWiki\Auth\PasswordAuthenticationRequest;
 use MediaWiki\Auth\AuthenticationResponse;
 
 class AMIVAuthenticationProvider
-	extends AbstractPasswordPrimaryAuthenticationProvider
+    extends AbstractPasswordPrimaryAuthenticationProvider
 {
-	public function __construct() {
-		parent::__construct();
-	}
+    public function __construct() {
+        parent::__construct();
+    }
 
-	public function getAuthenticationRequests($action, array $options) {
-		switch ($action) {
-			case AuthManager::ACTION_LOGIN:
-			case AuthManager::ACTION_CREATE:
-				return [new PasswordAuthenticationRequest];
-			default:
-				// Other actions not supported!
-				return [];
-		}
-	}
+    public function getAuthenticationRequests($action, array $options) {
+        switch ($action) {
+            case AuthManager::ACTION_LOGIN:
+            case AuthManager::ACTION_CREATE:
+                return [new PasswordAuthenticationRequest];
+            default:
+                // Other actions not supported!
+                return [];
+        }
+    }
 
-	public function beginPrimaryAuthentication(array $reqs) {
-		$req = AuthenticationRequest::getRequestByClass($reqs, PasswordAuthenticationRequest::class);
-		if (!$req || $req->username === null || $req->password === null) {
-			return AuthenticationResponse::newAbstain();
-		}
+    public function beginPrimaryAuthentication(array $reqs) {
+        $req = AuthenticationRequest::getRequestByClass($reqs, PasswordAuthenticationRequest::class);
+        if (!$req || $req->username === null || $req->password === null) {
+            return AuthenticationResponse::newAbstain();
+        }
 
-		$username = User::getCanonicalName($req->username, 'usable');
-		$user = strtolower($username);
-		$pass = rawurlencode($req->password);
+        $username = User::getCanonicalName($req->username, 'usable');
+        $user = strtolower($username);
+        $pass = rawurlencode($req->password);
         list($httpcode, $response) = APIUtil::post("sessions", "username=$user&password=$pass");
-		if($httpcode === 201) {
+        if($httpcode === 201) {
             return AuthenticationResponse::newPass($username);
-		}
-		// just abstain so local accounts can still be authenticated
-		return AuthenticationResponse::newAbstain();
-	}
+        }
+        // just abstain so local accounts can still be authenticated
+        return AuthenticationResponse::newAbstain();
+    }
 
-	public function testUserCanAuthenticate($username) {
-		$username = User::getCanonicalName($username, 'usable');
-		if ($username === false) {
-			return false;
-		}		
-		return true;
-	}
+    public function testUserCanAuthenticate($username) {
+        $username = User::getCanonicalName($username, 'usable');
+        if ($username === false) {
+            return false;
+        }       
+        return true;
+    }
 
-	public function providerRevokeAccessForUser($username) {
-		$username = User::getCanonicalName($username, 'usable');
-		if ($username === false) {
-			return;
-		}
-		$user = User::newFromName($username);
-		if ($user) {
-			// Reset the password on the local wiki user 
-			// to prevent a former AMIV member from logging in.
-			$user->setPasswordInternal(null);
-		}
-	}
+    public function providerRevokeAccessForUser($username) {
+        $username = User::getCanonicalName($username, 'usable');
+        if ($username === false) {
+            return;
+        }
+        $user = User::newFromName($username);
+        if ($user) {
+            // Reset the password on the local wiki user 
+            // to prevent a former AMIV member from logging in.
+            $user->setPasswordInternal(null);
+        }
+    }
 
-	public function testUserExists($username, $flags = User::READ_NORMAL) {
-		$username = User::getCanonicalName($username, 'usable');
-		if ($username === false) {
-			return false;
-		}
-		return true;
-	}
+    public function testUserExists($username, $flags = User::READ_NORMAL) {
+        $username = User::getCanonicalName($username, 'usable');
+        if ($username === false) {
+            return false;
+        }
+        return true;
+    }
 
-	public function providerAllowsPropertyChange($property) {
-		return false;
-	}
+    public function providerAllowsPropertyChange($property) {
+        return false;
+    }
 
-	public function providerAllowsAuthenticationDataChange(
-		AuthenticationRequest $req, $checkData = true
-	) {
-		return \StatusValue::newGood('ignored');
-	}
+    public function providerAllowsAuthenticationDataChange(
+        AuthenticationRequest $req, $checkData = true
+    ) {
+        return \StatusValue::newGood('ignored');
+    }
 
-	public function providerChangeAuthenticationData(AuthenticationRequest $req) {
-	}
+    public function providerChangeAuthenticationData(AuthenticationRequest $req) {
+    }
 
-	public function accountCreationType() {
-		return self::TYPE_NONE;
-	}
+    public function accountCreationType() {
+        return self::TYPE_NONE;
+    }
 
-	public function testForAccountCreation($user, $creator, array $reqs) {
-		return \StatusValue::newGood();
-	}
+    public function testForAccountCreation($user, $creator, array $reqs) {
+        return \StatusValue::newGood();
+    }
 
-	public function beginPrimaryAccountCreation($user, $creator, array $reqs) {
-		if ($this->accountCreationType() === self::TYPE_NONE) {
-			throw new \BadMethodCallException('Shouldn\'t call this when accountCreationType() is NONE');
-		}
-		return AuthenticationResponse::newAbstain();
-	}
-	
-	public function autoCreatedAccount($user, $source) {
-		// Set local password to null to prevent login if API is not accessible
-		$user->setPasswordInternal(null);
-	}
+    public function beginPrimaryAccountCreation($user, $creator, array $reqs) {
+        if ($this->accountCreationType() === self::TYPE_NONE) {
+            throw new \BadMethodCallException('Shouldn\'t call this when accountCreationType() is NONE');
+        }
+        return AuthenticationResponse::newAbstain();
+    }
+    
+    public function autoCreatedAccount($user, $source) {
+        // Set local password to null to prevent login if API is not accessible
+        $user->setPasswordInternal(null);
+    }
 }
