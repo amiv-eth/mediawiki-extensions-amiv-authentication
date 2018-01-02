@@ -103,6 +103,8 @@ class AMIVAuthenticationProvider
 					}
 				}
 			}
+			// Set local password to null to prevent login if API is not accessible
+			$user->setPasswordInternal(null);
 		}
 	}	
 	
@@ -164,7 +166,6 @@ class AMIVAuthenticationProvider
     }
     
     public function autoCreatedAccount($user, $source) {
-        // Set local password to null to prevent login if API is not accessible
-        $user->setPasswordInternal(null);
+        
     }
 }
