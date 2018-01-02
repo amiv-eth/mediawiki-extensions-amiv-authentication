@@ -29,6 +29,12 @@ use MediaWiki\Auth\AuthenticationResponse;
 class AMIVAuthenticationProvider
     extends AbstractPasswordPrimaryAuthenticationProvider
 {
+	global $wgAMIVAuthenticationValidGroups;
+	
+	private $apiLoginSuccessful = false;
+	private $apiToken = "";
+	private $apiGroupMemberships;
+	
     public function __construct() {
         parent::__construct();
     }
@@ -55,12 +61,51 @@ class AMIVAuthenticationProvider
         $pass = rawurlencode($req->password);
         list($httpcode, $response) = APIUtil::post("sessions", "username=$user&password=$pass");
         if($httpcode === 201) {
-            return AuthenticationResponse::newPass($username);
+			$this->apiToken = $response->token;
+			// retrieve list of the users groups from AMIV API
+            list($httpcode, $response) = APIUtil::get('groupmemberships?where={"user":"' .$response->user .'"}&embedded={"group":1}', $this->apiToken);
+            if ($httpcode == 200) {
+				$this->apiGroupMemberships = $response->_items;
+
+				$valid = false;
+				foreach ($this->apiGroups as $item) {
+					$group = $item->group;
+					if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
+						$valid = true;
+					}
+				}
+				if ($valid) {
+					return AuthenticationResponse::newPass($username);
+				}
+            }
         }
         // just abstain so local accounts can still be authenticated
         return AuthenticationResponse::newAbstain();
     }
 
+	public function postAuthentication($user, AuthenticationResponse $response) {
+		if ($response->status == AuthenticationResponse.PASS && $user != null) {
+			// Remove all group memberships
+			foreach ($user->getGroupMemberships() as $item) {
+				$item->delete();
+			}
+			
+			foreach ($this->apiGroupMemberships as $item) {
+				$group = $item->group;
+				if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
+					if ($group->name == "admin") {
+						$user->addGroup("sysop", $item->expiry);
+						$user->addGroup("bureaucrat", $item->expiry);
+					} else if ($group->name == "wiki") {
+						$user->addGroup("user", $item->expiry());
+					} else {
+						$user->addGroup($group->name, $item->expiry);
+					}
+				}
+			}
+		}
+	}	
+	
     public function testUserCanAuthenticate($username) {
         $username = User::getCanonicalName($username, 'usable');
         if ($username === false) {

@@ -28,7 +28,8 @@
         }
     },
     "config": {
-        "AMIVAuthenticationApiUrl": ""
+        "AMIVAuthenticationApiUrl": "",
+		"AMIVAuthenticationValidGroups": ["Vorstand", "admin", "wiki"]
     },
     "manifest_version": 1
 }
