@@ -4,7 +4,7 @@
     "author": [
         "Sandro Lutz"
     ],
-    "url": "https://github.com/amiv-eth/mediawiki-extensions-AMIVAuthentication",
+    "url": "https://gitlab.ethz.ch/amiv/mediawiki-extensions-AMIVAuthentication",
     "descriptionmsg": "amivauthentication-desc",
     "license-name": "AGPLv3",
     "type": "other",
