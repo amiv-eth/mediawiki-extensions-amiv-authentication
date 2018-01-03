@@ -29,8 +29,6 @@ use MediaWiki\Auth\AuthenticationResponse;
 class AMIVAuthenticationProvider
     extends AbstractPasswordPrimaryAuthenticationProvider
 {
-	global $wgAMIVAuthenticationValidGroups;
-	
 	private $apiLoginSuccessful = false;
 	private $apiToken = "";
 	private $apiGroupMemberships;
@@ -51,6 +49,8 @@ class AMIVAuthenticationProvider
     }
 
     public function beginPrimaryAuthentication(array $reqs) {
+		global $wgAMIVAuthenticationValidGroups;
+
         $req = AuthenticationRequest::getRequestByClass($reqs, PasswordAuthenticationRequest::class);
         if (!$req || $req->username === null || $req->password === null) {
             return AuthenticationResponse::newAbstain();
@@ -84,6 +84,8 @@ class AMIVAuthenticationProvider
     }
 
 	public function postAuthentication($user, AuthenticationResponse $response) {
+		global $wgAMIVAuthenticationValidGroups;
+
 		if ($response->status == AuthenticationResponse.PASS && $user != null) {
 			// Remove all group memberships
 			foreach ($user->getGroupMemberships() as $item) {
