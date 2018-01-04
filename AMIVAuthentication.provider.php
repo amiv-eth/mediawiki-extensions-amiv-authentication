@@ -25,14 +25,14 @@ use MediaWiki\Auth\AbstractPasswordPrimaryAuthenticationProvider;
 use MediaWiki\Auth\AuthenticationRequest;
 use MediaWiki\Auth\PasswordAuthenticationRequest;
 use MediaWiki\Auth\AuthenticationResponse;
+use MediaWiki\User\User;
 
 class AMIVAuthenticationProvider
     extends AbstractPasswordPrimaryAuthenticationProvider
 {
-	private $apiLoginSuccessful = false;
-	private $apiToken = "";
-	private $apiGroupMemberships;
-	
+    private $apiToken = "";
+    private $apiGroupMemberships = [];
+
     public function __construct() {
         parent::__construct();
     }
@@ -49,7 +49,7 @@ class AMIVAuthenticationProvider
     }
 
     public function beginPrimaryAuthentication(array $reqs) {
-		global $wgAMIVAuthenticationValidGroups;
+        global $wgAMIVAuthenticationValidGroups;
 
         $req = AuthenticationRequest::getRequestByClass($reqs, PasswordAuthenticationRequest::class);
         if (!$req || $req->username === null || $req->password === null) {
@@ -61,55 +61,34 @@ class AMIVAuthenticationProvider
         $pass = rawurlencode($req->password);
         list($httpcode, $response) = APIUtil::post("sessions", "username=$user&password=$pass");
         if($httpcode === 201) {
-			$this->apiToken = $response->token;
-			// retrieve list of the users groups from AMIV API
+            $this->apiToken = $response->token;
+            // retrieve list of the users groups from AMIV API
             list($httpcode, $response) = APIUtil::get('groupmemberships?where={"user":"' .$response->user .'"}&embedded={"group":1}', $this->apiToken);
             if ($httpcode == 200) {
-				$this->apiGroupMemberships = $response->_items;
+                $this->apiGroupMemberships = $response->_items;
 
-				$valid = false;
-				foreach ($this->apiGroups as $item) {
-					$group = $item->group;
-					if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
-						$valid = true;
-					}
-				}
-				if ($valid) {
-					return AuthenticationResponse::newPass($username);
-				}
+                $valid = false;
+                foreach ($this->apiGroupMemberships as $item) {
+                    $group = $item->group;
+                    if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
+                        $valid = true;
+                    }
+                }
+                if ($valid) {
+                    return AuthenticationResponse::newPass($username);
+                }
             }
         }
         // just abstain so local accounts can still be authenticated
         return AuthenticationResponse::newAbstain();
     }
 
-	public function postAuthentication($user, AuthenticationResponse $response) {
-		global $wgAMIVAuthenticationValidGroups;
+    public function postAuthentication($user, AuthenticationResponse $response) {
+        if ($response->status == AuthenticationResponse.PASS && $user != null && $user instanceof User) {
+            updateGroupMemberships($user);
+        }
+    }
 
-		if ($response->status == AuthenticationResponse.PASS && $user != null) {
-			// Remove all group memberships
-			foreach ($user->getGroupMemberships() as $item) {
-				$item->delete();
-			}
-			
-			foreach ($this->apiGroupMemberships as $item) {
-				$group = $item->group;
-				if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
-					if ($group->name == "admin") {
-						$user->addGroup("sysop", $item->expiry);
-						$user->addGroup("bureaucrat", $item->expiry);
-					} else if ($group->name == "wiki") {
-						$user->addGroup("user", $item->expiry());
-					} else {
-						$user->addGroup($group->name, $item->expiry);
-					}
-				}
-			}
-			// Set local password to null to prevent login if API is not accessible
-			$user->setPasswordInternal(null);
-		}
-	}	
-	
     public function testUserCanAuthenticate($username) {
         $username = User::getCanonicalName($username, 'usable');
         if ($username === false) {
@@ -127,7 +106,8 @@ class AMIVAuthenticationProvider
         if ($user) {
             // Reset the password on the local wiki user 
             // to prevent a former AMIV member from logging in.
-            $user->setPasswordInternal(null);
+            $user->setPassword(null);
+            $user->setToken();
         }
     }
 
@@ -168,6 +148,33 @@ class AMIVAuthenticationProvider
     }
     
     public function autoCreatedAccount($user, $source) {
-        
+        updateGroupMemberships($user);
+    }
+
+    private function updateGroupMemberships($user) {
+        global $wgAMIVAuthenticationValidGroups;
+
+        // Remove all group memberships
+        foreach ($user->getGroupMemberships() as $item) {
+            $item->delete();
+        }
+
+        foreach ($this->apiGroupMemberships as $item) {
+            $group = $item->group;
+            if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
+                if ($group->name == "admin") {
+                    $user->addGroup("sysop", $item->expiry);
+                    $user->addGroup("bureaucrat", $item->expiry);
+                } else if ($group->name == "wiki") {
+                    $user->addGroup("user", $item->expiry());
+                } else {
+                    $user->addGroup($group->name, $item->expiry);
+                }
+            }
+        }
+
+        // Set local password to null to prevent login if API is not accessible
+        $user->setPassword(null);
+        $user->setToken();
     }
 }
