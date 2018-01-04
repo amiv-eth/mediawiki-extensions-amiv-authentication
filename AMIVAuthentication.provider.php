@@ -25,7 +25,6 @@ use MediaWiki\Auth\AbstractPasswordPrimaryAuthenticationProvider;
 use MediaWiki\Auth\AuthenticationRequest;
 use MediaWiki\Auth\PasswordAuthenticationRequest;
 use MediaWiki\Auth\AuthenticationResponse;
-use MediaWiki\User\User;
 
 class AMIVAuthenticationProvider
     extends AbstractPasswordPrimaryAuthenticationProvider
@@ -79,13 +78,19 @@ class AMIVAuthenticationProvider
                 }
             }
         }
+
+        $userObject = User::newFromName($username);
+        if ($user && !in_array("sysop", $userObject->getGroups())) {
+            return AuthenticationResponse::newFail(wfMessage('wrongpassword'));
+        }
+
         // just abstain so local accounts can still be authenticated
         return AuthenticationResponse::newAbstain();
     }
 
     public function postAuthentication($user, AuthenticationResponse $response) {
-        if ($response->status == AuthenticationResponse.PASS && $user != null && $user instanceof User) {
-            updateGroupMemberships($user);
+        if (($response->status == AuthenticationResponse::PASS) && ($user !== false) && ($user instanceof \User)) {
+            $this->updateGroupMemberships($user);
         }
     }
 
@@ -148,7 +153,7 @@ class AMIVAuthenticationProvider
     }
     
     public function autoCreatedAccount($user, $source) {
-        updateGroupMemberships($user);
+        $this->updateGroupMemberships($user);
     }
 
     private function updateGroupMemberships($user) {
@@ -166,7 +171,7 @@ class AMIVAuthenticationProvider
                     $user->addGroup("sysop", $item->expiry);
                     $user->addGroup("bureaucrat", $item->expiry);
                 } else if ($group->name == "wiki") {
-                    $user->addGroup("user", $item->expiry());
+                    $user->addGroup("user", $item->expiry);
                 } else {
                     $user->addGroup($group->name, $item->expiry);
                 }
@@ -175,6 +180,5 @@ class AMIVAuthenticationProvider
 
         // Set local password to null to prevent login if API is not accessible
         $user->setPassword(null);
-        $user->setToken();
     }
 }
