@@ -175,7 +175,7 @@ class AMIVAuthenticationProvider
                 $user->addGroup("bureaucrat", $item->expiry);
                 $user->addGroup("sysop", $item->expiry);
                 $validUser = true;
-            } else if (in_array($group->name, $wgAMIVAuthenticationAdditionalGroups) {
+            } else if (in_array($group->name, $wgAMIVAuthenticationAdditionalGroups)) {
                 $user->addGroup($group->name, $item->expiry);
                 $validUser = true;
             } else if (in_array($group->name, $wgAMIVAuthenticationUserGroups) || $validUser) {
