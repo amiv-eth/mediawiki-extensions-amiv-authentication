@@ -48,7 +48,7 @@ class AMIVAuthenticationProvider
     }
 
     public function beginPrimaryAuthentication(array $reqs) {
-        global $wgAMIVAuthenticationValidGroups;
+        global $wgAMIVAuthenticationAdditionalGroups, $wgAMIVAuthenticationUserGroups, $wgAMIVAuthenticationSysopGroups;
 
         $req = AuthenticationRequest::getRequestByClass($reqs, PasswordAuthenticationRequest::class);
         if (!$req || $req->username === null || $req->password === null) {
@@ -69,7 +69,10 @@ class AMIVAuthenticationProvider
                 $valid = false;
                 foreach ($this->apiGroupMemberships as $item) {
                     $group = $item->group;
-                    if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
+                    if (in_array($group->name, $wgAMIVAuthenticationAdditionalGroups) ||
+                        in_array($group->name, $wgAMIVAuthenticationSysopGroups) ||
+                        in_array($group->name, $wgAMIVAuthenticationUserGroups))
+                    {
                         $valid = true;
                     }
                 }
@@ -157,7 +160,7 @@ class AMIVAuthenticationProvider
     }
 
     private function updateGroupMemberships($user) {
-        global $wgAMIVAuthenticationValidGroups;
+        global $wgAMIVAuthenticationSyssopGroups, $wgAMIVAuthenticationUserGroups, $wgAMIVAuthenticationAdditionalGroups;
 
         // Remove all group memberships
         foreach ($user->getGroupMemberships() as $item) {
@@ -166,16 +169,18 @@ class AMIVAuthenticationProvider
 
         foreach ($this->apiGroupMemberships as $item) {
             $group = $item->group;
-            if (in_array($group->name, $wgAMIVAuthenticationValidGroups)) {
-                if ($group->name == "admin") {
-                    $user->addGroup("sysop", $item->expiry);
-                    $user->addGroup("bureaucrat", $item->expiry);
-                } else if ($group->name == "wiki") {
-                    $user->addGroup("user", $item->expiry);
-                } else {
-                    $user->addGroup($group->name, $item->expiry);
-                }
-            }
+            $validUser = false;
+
+            if (in_array($group->name, $wgAMIVAuthenticationSyssopGroups)) {
+                $user->addGroup("bureaucrat", $item->expiry);
+                $user->addGroup("sysop", $item->expiry);
+                $validUser = true;
+            } else if (in_array($group->name, $wgAMIVAuthenticationAdditionalGroups) {
+                $user->addGroup($group->name, $item->expiry);
+                $validUser = true;
+            } else if (in_array($group->name, $wgAMIVAuthenticationUserGroups) || $validUser) {
+                $user->addGroup("user", $item->expiry);
+            } 
         }
 
         // Set local password to null to prevent login if API is not accessible
