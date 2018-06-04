@@ -21,7 +21,7 @@
  *
  */
 
-class APIUtil {
+class ApiUtil {
     /**
      * Send GET request to AMIV API
      * 
@@ -48,15 +48,21 @@ class APIUtil {
      * @param string $postData
      * @param string $token
      */
-    private static function rawreq($request, $postData=null, $token=null) {
-        global $wgAMIVAuthenticationApiUrl;
+    private static function rawreq($request, $postData=null, $argToken=null) {
+        global $wgAmivAuthenticationApiUrl, $wgAmivAuthenticationApiKey;
 
-        if (strlen($wgAMIVAuthenticationApiUrl) == 0) {
+        if (!$wgAmivAuthenticationApiUrl) {
             return [404, "API server not defined"];
         }
 
+        if ($argToken) {
+            $token = $argToken;
+        } else {
+            $token = $wgAmivAuthenticationApiKey;
+        }
+
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $wgAMIVAuthenticationApiUrl.'/'.$request);
+        curl_setopt($ch, CURLOPT_URL, $wgAmivAuthenticationApiUrl.'/'.$request);
         
         if ($postData != null) {
             curl_setopt($ch, CURLOPT_POST, 1);
@@ -66,8 +72,8 @@ class APIUtil {
         // ToDo: change SSL options to true
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5); //timeout in seconds
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5); // timeout in seconds
         curl_setopt($ch, CURLINFO_HEADER_OUT, true);
         if ($token != null) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' .$token]);
