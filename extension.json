@@ -1,10 +1,10 @@
 {
-    "name": "AMIVAuthentication",
+    "name": "amiv Authentication",
     "version": "0.1.0",
     "author": [
         "Sandro Lutz"
     ],
-    "url": "https://gitlab.ethz.ch/amiv/mediawiki-extensions-AMIVAuthentication",
+    "url": "https://gitlab.ethz.ch/amiv/mediawiki-extensions-amiv-authentication",
     "descriptionmsg": "amivauthentication-desc",
     "license-name": "AGPLv3",
     "type": "other",
