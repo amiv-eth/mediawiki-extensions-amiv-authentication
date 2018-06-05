@@ -22,6 +22,7 @@
  */
 
 class ApiUtil {
+
     /**
      * Send GET request to AMIV API
      * 
@@ -29,8 +30,9 @@ class ApiUtil {
      * @param string $token
      */
     public static function get($request, $token=null) {
-        return self::rawreq($request, null, $token);
+        return self::rawreq($request, null, null, $token);
     }
+
     /**
      * Send POST request to AMIV API
      * 
@@ -39,16 +41,29 @@ class ApiUtil {
      * @param string $token
      */
     public static function post($request, $postData, $token=null) {
-        return self::rawreq($request, $postData, $token);
+        return self::rawreq($request, $postData, null, $token);
     }
+
+    /**
+     * send DELETE request to AMIV API
+     * 
+     * @param string $request
+     * @param string $etag
+     * @param string $token
+     */
+    public static function delete($request, $etag, $token=null) {
+        return self::rawreq($url, $request, null, $etag, $token);
+    }
+
     /**
      * Assemble request and send it
      * 
      * @param string $request
      * @param string $postData
+     * @param string $etag
      * @param string $token
      */
-    private static function rawreq($request, $postData=null, $argToken=null) {
+    private static function rawreq($request, $postData=null, $etag=null, $argToken=null) {
         global $wgAmivAuthenticationApiUrl, $wgAmivAuthenticationApiKey;
 
         if (!$wgAmivAuthenticationApiUrl) {
@@ -69,15 +84,19 @@ class ApiUtil {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         }
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // ToDo: change SSL options to true
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5); // timeout in seconds
         curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+        $header = [];
         if ($token != null) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' .$token]);
+            $header[] = 'Authorization: ' .$token;
         }
+        if ($etag != null) {
+            $header[] = 'If-Match: ' .$etag;
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
         curl_setopt($ch, CURLOPT_VERBOSE, true);
         $response = json_decode(curl_exec($ch));
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

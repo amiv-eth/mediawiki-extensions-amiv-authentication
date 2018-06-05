@@ -26,8 +26,6 @@ if ( !defined( 'MEDIAWIKI' )) {
 
 class ApiSync {
 
-    private const table = 'amiv_users';
-
     /**
      * Sync user information and group memberships with the given user
      *
@@ -113,22 +111,17 @@ class ApiSync {
 
     /** Get or create a local user based on the API user id or on the given name */
     private static function getOrCreateUser($apiUserId, $name) {
-      $dbr = wfGetDB(DB_SLAVE);
-      $row = $dbr->selectRow(
-        self::table,
-        '*',
-        array('external_id' => $apiUserId)
-      );
-
-      if ($row) {
+      $db = AmivAuthenticationDB::getInstance();
+      $localUserId = $db->getLocalUserId($apiUserId);
+      if ($localUserId) {
         // User already linked with a local account
-        return User::newFromId($row->internal_id);
+        return User::newFromId($localUserId);
       }
 
       $user = User::newFromName($name, 'creatable');
       if (false === $user || $user->getId() != 0) {
         if (false === $user) {
-          throw new MWException('Unable to create user.1');
+          throw new MWException('Unable to create user.');
         }
       }
       if (!$user->isLoggedIn()) { 
@@ -139,13 +132,7 @@ class ApiSync {
       }
 
       // add link to api user
-      $dbw = wfGetDB(DB_MASTER);
-      $dbw->replace(
-        self::table,
-        ['internal_id', 'external_id'],
-        ['internal_id' => $user->getId(), 'external_id' => $apiUserId],
-        __METHOD__
-      );
+      $db->createOrUpdateEntry($user->getId(), $apiUserId);
       return $user;
     }
 }

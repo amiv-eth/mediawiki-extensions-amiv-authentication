@@ -12,13 +12,14 @@
         "MediaWiki": ">= 1.27.0"
     },
     "MessagesDirs": {
-        "AMIVAuthentication": [
+        "AmivAuthentication": [
             "i18n"
         ]
     },
     "AutoloadClasses": {
         "ApiUtil": "ApiUtil.php",
         "ApiSync": "ApiSync.php",
+        "AmivAuthenticationDB": "AmivAuthentication.db.php",
         "AmivAuthenticationHooks": "AmivAuthentication.hooks.php",
         "AmivAuthenticationSpecial": "AmivAuthentication.special.php",
         "AmivAuthenticationProvider": "AmivAuthentication.provider.php"
