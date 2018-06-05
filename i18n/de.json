@@ -4,5 +4,9 @@
 			"Sandro Lutz"
 		]
 	},
-	"amivauthentication-desc": "Stellt einen Authentication-Provider zur Verfügung, um sich mit der amiv API einzuloggen."
+	"amivauthentication-desc": "Stellt einen Authentication-Provider zur Verfügung, um sich mit der amiv API einzuloggen.",
+	"amivauthentication-error-title": "amiv Authentifizierungsfehler",
+	"amivauthentication-bad-request": "Die letzte Anfrage war unvollständig. Bitte versuche es erneut.",
+	"amivauthentication-invalid-token": "Authnetifizierung fehlgeschlagen. Der Token ist ungültig. Bitte versuche es erneut.",
+	"amivauthentication-no-permission": "Du hast nicht genug Berechtigungen um dieses Tool zu verwenden."
 }

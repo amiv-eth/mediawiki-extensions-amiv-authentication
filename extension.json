@@ -47,6 +47,9 @@
 	},
     "config": {
         "AmivAuthenticationDisablePasswordReset": true,
+        "AmivAuthenticationOAuthAutoRedirect": false,
+        "AmivAuthenticationOAuthRedirectProtocol": "https",
+        "AmivAuthenticationOAuthClientId": null,
         "AmivAuthenticationApiUrl": null,
         "AmivAuthenticationApiKey": null,
         "AmivAuthenticationUserGroups": ["Wiki"],

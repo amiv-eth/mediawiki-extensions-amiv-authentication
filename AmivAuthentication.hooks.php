@@ -26,10 +26,32 @@ if ( !defined( 'MEDIAWIKI' )) {
 
 class AmivAuthenticationHooks {
 	public static function onUserLoginForm(&$tpl) {
-		global $wgRequest;
-	   	$header = $tpl->get('header');
-	   	$header .= '<a class="mw-ui-button mw-ui-progressive dataporten-button" href="' . Skin::makeSpecialUrlSubpage('AmivAuthentication', 'redirect', 'returnto='.$wgRequest->getVal('returnto')) . '">Login with amiv SSO</a>';
-			$tpl->set('header', $header);
+		global $wgRequest, $wgAmivAuthenticationApiUrl, $wgAmivAuthenticationOAuthAutoRedirect,
+		  $wgAmivAuthenticationOAuthRedirectProtocol, $wgAmivAuthenticationOAuthClientId;
+
+		if (!$wgAmivAuthenticationApiUrl || !$wgAmivAuthenticationOAuthClientId) {
+			return; // configuration is incomplete
+		}
+
+		if (!isset($_SESSION['amiv.oauth_state'])) {
+			$state = bin2hex(random_bytes(32));
+			$_SESSION['amiv.oauth_state'] = $state;
+		} else {
+			$state = $_SESSION['amiv.oauth_state'];
+		}
+
+		$redirectUri = Skin::makeSpecialUrl('AmivAuthentication', 'returnto='.$wgRequest->getVal('returnto'), $wgAmivAuthenticationOAuthRedirectProtocol);
+		$providerUrl = $wgAmivAuthenticationApiUrl .'/oauth?response_type=token&client_id=' 
+			.urlencode($wgAmivAuthenticationOAuthClientId) .'&state=' .$state .'&redirect_uri=' .urlencode($redirectUri);
+
+		// Add amiv SSO button before login form
+		$header = $tpl->get('header');
+		$header .= '<a class="mw-ui-button mw-ui-progressive dataporten-button" href="' . $providerUrl . '">Login with amiv SSO</a>';
+		$tpl->set('header', $header);
+		if (!isset($_GET['no_redirect']) && $wgAmivAuthenticationOAuthAutoRedirect) {
+			header('Location: ' . $providerUrl);
+			exit();
+		}
   }
 
 	public static function onUserLogout(&$user) {
