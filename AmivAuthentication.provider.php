@@ -54,18 +54,22 @@ class AmivAuthenticationProvider
 
         $username = $req->username;
         $pass = rawurlencode($req->password);
-        list($httpcode, $response) = ApiUtil::post('sessions?embedded={"user":1}', 'username=' .$username .'&password=' .$pass);
+        list($httpcode, $session) = ApiUtil::post('sessions?embedded={"user":1}', 'username=' .$username .'&password=' .$pass);
 
         if ($httpcode === 201) {
-            $apiUser = $response->user;
+            $apiUser = $session->user;
             try {
                 $user = ApiSync::syncUser($apiUser);
             } catch (\Exception $e) {
-                return AuthenticationResponse::newFail(wfMessage('error: ' .$e->getMessage()));
             }
 
             if ($user) {
+                $_SESSION['api_session_id'] = $session->_id;
+		        $_SESSION['api_session_token'] = $session->token;
                 return AuthenticationResponse::newPass($user->getName());
+            } else {
+                // Remove newly created session as it is not used anymore
+                ApiUtil::delete('sessions/' .$session->_id, $session->_etag, $session->token);
             }
         }
 
