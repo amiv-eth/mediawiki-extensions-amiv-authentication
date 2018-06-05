@@ -1,10 +1,10 @@
 {
-    "name": "AMIVAuthentication",
+    "name": "amiv Authentication",
     "version": "0.1.0",
     "author": [
         "Sandro Lutz"
     ],
-    "url": "https://gitlab.ethz.ch/amiv/mediawiki-extensions-AMIVAuthentication",
+    "url": "https://gitlab.ethz.ch/amiv/mediawiki-extensions-amiv-authentication",
     "descriptionmsg": "amivauthentication-desc",
     "license-name": "AGPLv3",
     "type": "other",
@@ -12,26 +12,49 @@
         "MediaWiki": ">= 1.27.0"
     },
     "MessagesDirs": {
-        "AMIVAuthentication": [
+        "AmivAuthentication": [
             "i18n"
         ]
     },
     "AutoloadClasses": {
-        "APIUtil": "APIUtil.php",
-        "AMIVAuthenticationProvider": "AMIVAuthentication.provider.php"
+        "ApiUtil": "ApiUtil.php",
+        "ApiSync": "ApiSync.php",
+        "AmivAuthenticationDB": "AmivAuthentication.db.php",
+        "AmivAuthenticationHooks": "AmivAuthentication.hooks.php",
+        "AmivAuthenticationSpecial": "AmivAuthentication.special.php",
+        "AmivAuthenticationProvider": "AmivAuthentication.provider.php"
     },
     "AuthManagerAutoConfig": {
         "primaryauth": {
-            "AMIVAuthenticationProvider": {
-                "class": "AMIVAuthenticationProvider"
+            "AmivAuthenticationProvider": {
+                "class": "AmivAuthenticationProvider"
             }
         }
     },
+    "Hooks": {
+        "UserLogout": [
+			"AmivAuthenticationHooks::onUserLogout"
+		],
+		"UserLoginForm": [
+			"AmivAuthenticationHooks::onUserLoginForm"
+		],
+        "LoadExtensionSchemaUpdates": [
+			"AmivAuthenticationHooks::onLoadExtensionSchemaUpdates"
+		]
+    },
+    "SpecialPages": {
+		"AmivAuthentication": "AmivAuthenticationSpecial"
+	},
     "config": {
-        "AMIVAuthenticationApiUrl": "",
-        "AMIVAuthenticationUserGroups": ["wiki"],
-        "AMIVAuthenticationSysopGroups": ["admin"],
-        "AMIVAuthenticationAdditionalGroups": ["Vorstand"]
+        "AmivAuthenticationDisablePasswordReset": true,
+        "AmivAuthenticationOAuthAutoRedirect": false,
+        "AmivAuthenticationOAuthRedirectProtocol": "https",
+        "AmivAuthenticationOAuthClientId": null,
+        "AmivAuthenticationApiUrl": null,
+        "AmivAuthenticationApiKey": null,
+        "AmivAuthenticationUserGroups": ["Wiki"],
+        "AmivAuthenticationSysopGroups": ["admin"],
+        "AmivAuthenticationAdditionalGroups": ["Vorstand"]
     },
     "manifest_version": 1
 }

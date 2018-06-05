@@ -26,12 +26,9 @@ use MediaWiki\Auth\AuthenticationRequest;
 use MediaWiki\Auth\PasswordAuthenticationRequest;
 use MediaWiki\Auth\AuthenticationResponse;
 
-class AMIVAuthenticationProvider
+class AmivAuthenticationProvider
     extends AbstractPasswordPrimaryAuthenticationProvider
 {
-    private $apiToken = "";
-    private $apiGroupMemberships = [];
-
     public function __construct() {
         parent::__construct();
     }
@@ -48,42 +45,37 @@ class AMIVAuthenticationProvider
     }
 
     public function beginPrimaryAuthentication(array $reqs) {
-        global $wgAMIVAuthenticationAdditionalGroups, $wgAMIVAuthenticationUserGroups, $wgAMIVAuthenticationSysopGroups;
+        global $wgAmivAuthenticationAdditionalGroups, $wgAmivAuthenticationUserGroups, $wgAmivAuthenticationSysopGroups;
 
         $req = AuthenticationRequest::getRequestByClass($reqs, PasswordAuthenticationRequest::class);
         if (!$req || $req->username === null || $req->password === null) {
             return AuthenticationResponse::newAbstain();
         }
 
-        $username = User::getCanonicalName($req->username, 'usable');
-        $user = strtolower($username);
+        $username = $req->username;
         $pass = rawurlencode($req->password);
-        list($httpcode, $response) = APIUtil::post("sessions", "username=$user&password=$pass");
-        if($httpcode === 201) {
-            $this->apiToken = $response->token;
-            // retrieve list of the users groups from AMIV API
-            list($httpcode, $response) = APIUtil::get('groupmemberships?where={"user":"' .$response->user .'"}&embedded={"group":1}', $this->apiToken);
-            if ($httpcode == 200) {
-                $this->apiGroupMemberships = $response->_items;
+        list($httpcode, $session) = ApiUtil::post('sessions?embedded={"user":1}', 'username=' .$username .'&password=' .$pass);
 
-                $valid = false;
-                foreach ($this->apiGroupMemberships as $item) {
-                    $group = $item->group;
-                    if (in_array($group->name, $wgAMIVAuthenticationAdditionalGroups) ||
-                        in_array($group->name, $wgAMIVAuthenticationSysopGroups) ||
-                        in_array($group->name, $wgAMIVAuthenticationUserGroups))
-                    {
-                        $valid = true;
-                    }
-                }
-                if ($valid) {
-                    return AuthenticationResponse::newPass($username);
-                }
+        if ($httpcode === 201) {
+            $apiUser = $session->user;
+            try {
+                $user = ApiSync::syncUser($apiUser);
+            } catch (\Exception $e) {
+            }
+
+            if ($user) {
+                $_SESSION['api_session_id'] = $session->_id;
+		        $_SESSION['api_session_token'] = $session->token;
+                return AuthenticationResponse::newPass($user->getName());
+            } else {
+                // Remove newly created session as it is not used anymore
+                ApiUtil::delete('sessions/' .$session->_id, $session->_etag, $session->token);
             }
         }
 
-        $userObject = User::newFromName($username);
-        if ($user && !in_array("sysop", $userObject->getGroups())) {
+        $canonicalUsername = User::getCanonicalName($username, 'usable');
+        $userObject = User::newFromName($canonicalUsername);
+        if ($userObject && !in_array("sysop", $userObject->getGroups())) {
             return AuthenticationResponse::newFail(wfMessage('wrongpassword'));
         }
 
@@ -92,9 +84,6 @@ class AMIVAuthenticationProvider
     }
 
     public function postAuthentication($user, AuthenticationResponse $response) {
-        if (($response->status == AuthenticationResponse::PASS) && ($user !== false) && ($user instanceof \User)) {
-            $this->updateGroupMemberships($user);
-        }
     }
 
     public function testUserCanAuthenticate($username) {
@@ -134,7 +123,11 @@ class AMIVAuthenticationProvider
     public function providerAllowsAuthenticationDataChange(
         AuthenticationRequest $req, $checkData = true
     ) {
-        return \StatusValue::newGood('ignored');
+        global $wgAmivAuthenticationDisablePasswordReset;
+        if ($wgAmivAuthenticationDisablePasswordReset) {
+            return \StatusValue::newFatal('password change not allowed');
+        }
+        return \StatusValue::newGood();
     }
 
     public function providerChangeAuthenticationData(AuthenticationRequest $req) {
@@ -156,34 +149,5 @@ class AMIVAuthenticationProvider
     }
     
     public function autoCreatedAccount($user, $source) {
-        $this->updateGroupMemberships($user);
-    }
-
-    private function updateGroupMemberships($user) {
-        global $wgAMIVAuthenticationSyssopGroups, $wgAMIVAuthenticationUserGroups, $wgAMIVAuthenticationAdditionalGroups;
-
-        // Remove all group memberships
-        foreach ($user->getGroupMemberships() as $item) {
-            $item->delete();
-        }
-
-        foreach ($this->apiGroupMemberships as $item) {
-            $group = $item->group;
-            $validUser = false;
-
-            if (in_array($group->name, $wgAMIVAuthenticationSyssopGroups)) {
-                $user->addGroup("bureaucrat", $item->expiry);
-                $user->addGroup("sysop", $item->expiry);
-                $validUser = true;
-            } else if (in_array($group->name, $wgAMIVAuthenticationAdditionalGroups)) {
-                $user->addGroup($group->name, $item->expiry);
-                $validUser = true;
-            } else if (in_array($group->name, $wgAMIVAuthenticationUserGroups) || $validUser) {
-                $user->addGroup("user", $item->expiry);
-            } 
-        }
-
-        // Set local password to null to prevent login if API is not accessible
-        $user->setPassword(null);
     }
 }

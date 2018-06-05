@@ -13,7 +13,7 @@ services:
       - database
     volumes:
       - /var/www/html/images
-      - ./:/var/www/html/extensions/AMIVAuthentication
+      - ./:/var/www/html/extensions/AmivAuthentication
       # After initial setup, download LocalSettings.php to the same directory as
       # this yaml and uncomment the following line and use compose to restart
       # the mediawiki service
