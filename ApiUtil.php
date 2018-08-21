@@ -52,7 +52,7 @@ class ApiUtil {
      * @param string $token
      */
     public static function delete($request, $etag, $token=null) {
-        return self::rawreq($url, $request, null, $etag, $token);
+        return self::rawreq($url, $request, null, $etag, $token, 'DELETE');
     }
 
     /**
@@ -63,7 +63,7 @@ class ApiUtil {
      * @param string $etag
      * @param string $token
      */
-    private static function rawreq($request, $postData=null, $etag=null, $argToken=null) {
+    private static function rawreq($request, $postData=null, $etag=null, $argToken=null, $customMethod=null) {
         global $wgAmivAuthenticationApiUrl, $wgAmivAuthenticationApiKey;
 
         if (!$wgAmivAuthenticationApiUrl) {
@@ -74,6 +74,10 @@ class ApiUtil {
             $token = $argToken;
         } else {
             $token = $wgAmivAuthenticationApiKey;
+        }
+
+        if ($customMethod != null) {
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $customMethod);
         }
 
         $ch = curl_init();
