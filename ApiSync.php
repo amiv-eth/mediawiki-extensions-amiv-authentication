@@ -33,7 +33,10 @@ class ApiSync {
      * @return \User local user if user has enough permissions; null otherwise
      */
     public static function syncUser($apiUser) {
-        [$userGroups, $additionalGroups, $sysopGroups] = self::getAllowedApiGroups();
+        $groups = self::getAllowedApiGroups();
+        $userGroups = $groups[0];
+        $additionalGroups = $groups[1];
+        $sysopGroups = $groups[2];
 
         $groupIds = array_merge([], array_keys($userGroups), array_keys($additionalGroups), array_keys($sysopGroups));
         $groupmemberships = self::getApiUserGroupmemberships($apiUser, $groupIds);
