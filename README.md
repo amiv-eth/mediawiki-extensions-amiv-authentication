@@ -1,4 +1,4 @@
-# amiv Authentication (MediaWiki Extension)
+# AMIV Authentication (MediaWiki Extension)
 
 Extension to authenticate using amiv API
 
@@ -14,16 +14,20 @@ $wgAmivAuthenticationDisablePasswordReset = true;
 $wgAmivAuthenticationOAuthAutoRedirect = false;
 $wgAmivAuthenticationOAuthRedirectProtocol = 'https';
 $wgAmivAuthenticationOAuthClientId = '<oauth2-client-id>';
-$wgAmivAuthenticationUserGroups = ['Wiki'];           // Groups which are allowed to use this tool
-$wgAmivAuthenticationSysopGroups = ['admin'];         // Groups with will be granted `sysop` rights
-$wgAmivAuthenticationAdditionalGroups = ['Vorstand']; // Groups which get directly assigned to mediawiki users
+$wgAmivAuthenticationUserGroups = ['<wiki-group-id'];          // Groups which are allowed to use this tool
+$wgAmivAuthenticationSysopGroups = ['<admin-group-id>'];       // Groups with will be granted `sysop` rights
+$wgAmivAuthenticationAdditionalGroups = ['<board-group-id>'];  // Groups which get directly assigned to mediawiki users
 ```
+
+Please note that the group arrays have to contain the group id!
 
 You need also to specify the following in your settings:
 
 ```php
 $wgWhitelistRead = ['Special:AmivAuthentication'];
 ```
+
+Please note that the entry above is localized. For an instance set to german, it would be `Spezial:AmivAuthentication`.
 
 ## Development
 
