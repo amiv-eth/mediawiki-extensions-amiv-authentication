@@ -4,8 +4,8 @@
 			"Sandro Lutz"
 		]
 	},
-	"amivauthentication-desc": "Adds a authentication provider to connect with amiv API",
-	"amivauthentication-error-title": "amiv Authentication Error",
+	"amivauthentication-desc": "Adds a authentication provider to connect with AMIV API",
+	"amivauthentication-error-title": "AMIV Authentication Error",
 	"amivauthentication-bad-request": "Received an incomplete request. Please try again.",
 	"amivauthentication-invalid-token": "Authentication failed. The token may be invalid. Please try again.",
 	"amivauthentication-no-permission": "You do not have enough permissions to use this tool."

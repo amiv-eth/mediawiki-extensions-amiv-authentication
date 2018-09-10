@@ -46,7 +46,7 @@ class AmivAuthenticationHooks {
 
 		// Add amiv SSO button before login form
 		$header = $tpl->get('header');
-		$header .= '<a class="mw-ui-button mw-ui-progressive dataporten-button" href="' . $providerUrl . '">Login with amiv SSO</a>';
+		$header .= '<a class="mw-ui-button mw-ui-progressive dataporten-button" href="' . $providerUrl . '">Login with AMIV SSO</a>';
 		$tpl->set('header', $header);
 		if (!isset($_GET['no_redirect']) && $wgAmivAuthenticationOAuthAutoRedirect) {
 			header('Location: ' . $providerUrl);
