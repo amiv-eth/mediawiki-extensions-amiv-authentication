@@ -38,7 +38,7 @@ class ApiSync {
         $additionalGroups = $wgAmivAuthenticationAdditionalGroups;
         $sysopGroups = $wgAmivAuthenticationSysopGroups;
 
-        $groupIds = array_merge([], $userGroups, $additionalGroups, $sysopGroups);
+        $groupIds = array_merge([], $userGroups, array_keys($additionalGroups), $sysopGroups);
         $groupmemberships = self::getApiUserGroupmemberships($apiUser, $groupIds);
 
         // User is not allowed to access the wiki
@@ -62,11 +62,14 @@ class ApiSync {
         // Update group memberships
         $groupsAdded = [];
         foreach ($groupmemberships as $item) {
-            if (isset($additionalGroups[$item->group])) {
-                $groupName = $additionalGroups[$item->group]->name;
-                $user->addGroup($groupName);
-                $groupsAdded[] = $groupName;
-            } else if (isset($sysopGroups[$item->group])) {
+            if (in_array($item->group, $additionalGroups)) {
+                list($httpcode, $response) = ApiUtil::get('groups/' .$item->group);
+                if ($httpcode == 200) {
+                    $groupName = $response->name;
+                    $user->addGroup($groupName);
+                    $groupsAdded[] = $groupName;
+                }
+            } else if (in_array($item->group, $sysopGroups)) {
                 $user->addGroup('sysop');
                 $groupsAdded[] = 'sysop';
             }
@@ -82,7 +85,6 @@ class ApiSync {
     }
 
     private static function getApiUserGroupmemberships($apiUser, $groupIds) {
-        var_dump('groupmemberships?where={"user":"' .$apiUser->_id .'","group":{"$in":' .json_encode($groupIds) .'}}');
         list($httpcode, $response) = ApiUtil::get('groupmemberships?where={"user":"' .$apiUser->_id .'","group":{"$in":' .json_encode($groupIds) .'}}');
         if ($httpcode == 200) {
             return $response->_items;
