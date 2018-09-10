@@ -26,7 +26,7 @@ if ( !defined( 'MEDIAWIKI' )) {
 
 class AmivAuthenticationDB {
 
-  private const table = 'amiv_users';
+  private static $table = 'amiv_users';
   private static $instance;
 
   private $dbr;
@@ -51,7 +51,7 @@ class AmivAuthenticationDB {
    */
   public function getLocalUserId($apiUserId) {
     $row = $this->dbr->selectRow(
-      self::table,
+      self::$table,
       '*',
       array('external_id' => $apiUserId)
     );
@@ -68,7 +68,7 @@ class AmivAuthenticationDB {
    */
   public function getApiUserId($localUserId) {
     $row = $this->dbr->selectRow(
-      self::table,
+      self::$table,
       '*',
       array('internal_id' => $localUserId)
     );
@@ -85,7 +85,7 @@ class AmivAuthenticationDB {
    */
   public function createOrUpdateEntry($localUserId, $apiUserId) {
     $this->dbw->replace(
-      self::table,
+      self::$table,
       ['internal_id', 'external_id'],
       ['internal_id' => $localUserId, 'external_id' => $apiUserId],
       __METHOD__
