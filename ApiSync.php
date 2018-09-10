@@ -33,12 +33,12 @@ class ApiSync {
      * @return \User local user if user has enough permissions; null otherwise
      */
     public static function syncUser($apiUser) {
-        $groups = self::getAllowedApiGroups();
-        $userGroups = $groups[0];
-        $additionalGroups = $groups[1];
-        $sysopGroups = $groups[2];
+        global $wgAmivAuthenticationUserGroups, $wgAmivAuthenticationAdditionalGroups, $wgAmivAuthenticationSysopGroups;
+        $userGroups = $wgAmivAuthenticationUserGroups;
+        $additionalGroups = $wgAmivAuthenticationAdditionalGroups;
+        $sysopGroups = $wgAmivAuthenticationSysopGroups;
 
-        $groupIds = array_merge([], array_keys($userGroups), array_keys($additionalGroups), array_keys($sysopGroups));
+        $groupIds = array_merge([], $userGroups, $additionalGroups, $sysopGroups);
         $groupmemberships = self::getApiUserGroupmemberships($apiUser, $groupIds);
 
         // User is not allowed to access the wiki
@@ -81,30 +81,8 @@ class ApiSync {
         return $user;
     }
 
-    private static function getAllowedApiGroups() {
-        global $wgAmivAuthenticationAdditionalGroups, $wgAmivAuthenticationSysopGroups, $wgAmivAuthenticationUserGroups;
-        $groupNames = array_merge([], $wgAmivAuthenticationAdditionalGroups, $wgAmivAuthenticationSysopGroups, $wgAmivAuthenticationUserGroups);
-        $additionalGroups = [];
-        $sysopGroups = [];
-        $userGroups = [];
-
-        list($httpcode, $response) = ApiUtil::get('groups?where={"name":{"$in":' .json_encode($groupNames) .'}}');
-        if ($httpcode == 200) {
-
-            foreach($response->_items as $group) {
-                if (in_array($group->name, $wgAmivAuthenticationAdditionalGroups)) {
-                    $additionalGroups[$group->_id] = $group;
-                } else if (in_array($group->name, $wgAmivAuthenticationSysopGroups)) {
-                    $sysopGroups[$group->_id] = $group;
-                } else if (in_array($group->name, $wgAmivAuthenticationUserGroups)) {
-                    $userGroups[$group->_id] = $group;
-                }
-            }
-        }
-        return [$userGroups, $additionalGroups, $sysopGroups];
-    }
-
     private static function getApiUserGroupmemberships($apiUser, $groupIds) {
+        var_dump('groupmemberships?where={"user":"' .$apiUser->_id .'","group":{"$in":' .json_encode($groupIds) .'}}');
         list($httpcode, $response) = ApiUtil::get('groupmemberships?where={"user":"' .$apiUser->_id .'","group":{"$in":' .json_encode($groupIds) .'}}');
         if ($httpcode == 200) {
             return $response->_items;
