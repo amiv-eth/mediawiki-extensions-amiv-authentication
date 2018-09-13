@@ -95,8 +95,8 @@ class AmivAuthenticationSpecial extends SpecialPage {
 	private function makeSuccess() {
 		global $wgOut;
 
-		if($_GET['return_to']) {
-			$title = Title::newFromText($_GET['return_to']);
+		if($_GET['returnto']) {
+			$title = Title::newFromText($_GET['returnto']);
 		} else {
 			$title = Title::newMainPage();
 		}
